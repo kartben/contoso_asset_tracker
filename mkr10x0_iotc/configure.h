@@ -7,6 +7,13 @@ static char PROGMEM iotc_deviceKey[] = "<replace with IoT Central device key>";
 static char PROGMEM wifi_ssid[] = "<replace with Wi-Fi SSID>";
 static char PROGMEM wifi_password[] = "<replace with Wi-Fi password>";
 
+// GSM information
+static char PROGMEM PINNUMBER[]     = "0000";
+// APN data
+static char PROGMEM GPRS_APN[]      = "";
+static char PROGMEM GPRS_LOGIN[]    = "";
+static char PROGMEM GPRS_PASSWORD[] = "";
+
 // comment / un-comment the correct sensor type being used
 #define SIMULATE_DHT_TYPE
 //#define DHT11_TYPE

@@ -39,18 +39,23 @@ int getDPSAuthString(char* scopeId, char* deviceId, char* key, char *buffer, int
 }
 
 int _getOperationId(char* scopeId, char* deviceId, char* authHeader, char *operationId) {
-  WiFiSSLClient client;
-  if (client.connect(AZURE_IOT_CENTRAL_DPS_ENDPOINT, 443)) {
+  Client *client;
+  #if defined ARDUINO_SAMD_MKR1000 || defined ARDUINO_SAMD_MKRWIFI1010
+  client = new WiFiSSLClient();
+  #else if defined ARDUINO_SAMD_MKRGSM1400
+  client = new GSMSSLClient();
+  #endif
+  if (client->connect(AZURE_IOT_CENTRAL_DPS_ENDPOINT, 443)) {
     char tmpBuffer[TEMP_BUFFER_SIZE] = {0};
     String deviceIdEncoded = urlEncode(deviceId);
     size_t size = snprintf(tmpBuffer, TEMP_BUFFER_SIZE,
       "PUT /%s/registrations/%s/register?api-version=2018-11-01 HTTP/1.0", scopeId, deviceIdEncoded.c_str());
     assert(size != 0); tmpBuffer[size] = 0;
-    client.println(tmpBuffer);
-    client.println("Host: global.azure-devices-provisioning.net");
-    client.println("content-type: application/json; charset=utf-8");
-    client.println("user-agent: iot-central-client/1.0");
-    client.println("Accept: */*");
+    client->println(tmpBuffer);
+    client->println("Host: global.azure-devices-provisioning.net");
+    client->println("content-type: application/json; charset=utf-8");
+    client->println("user-agent: iot-central-client/1.0");
+    client->println("Accept: */*");
     size = snprintf(tmpBuffer, TEMP_BUFFER_SIZE,
       "{\"registrationId\":\"%s\"}", deviceId);
     assert(size != 0); tmpBuffer[size] = 0;
@@ -58,18 +63,18 @@ int _getOperationId(char* scopeId, char* deviceId, char* authHeader, char *opera
     size = snprintf(tmpBuffer, TEMP_BUFFER_SIZE,
       "Content-Length: %d", regMessage.length());
     assert(size != 0); tmpBuffer[size] = 0;
-    client.println(tmpBuffer);
+    client->println(tmpBuffer);
 
-    client.println(authHeader);
-    client.println("Connection: close");
-    client.println();
-    client.println(regMessage.c_str());
+    client->println(authHeader);
+    client->println("Connection: close");
+    client->println();
+    client->println(regMessage.c_str());
 
     delay(2000); // give 2 secs to server to process
     memset(tmpBuffer, 0, TEMP_BUFFER_SIZE);
     int index = 0;
-    while (client.available() && index < TEMP_BUFFER_SIZE - 1) {
-      tmpBuffer[index++] = client.read();
+    while (client->available() && index < TEMP_BUFFER_SIZE - 1) {
+      tmpBuffer[index++] = client->read();
     }
     tmpBuffer[index] = 0;
     const char* operationIdString= "{\"operationId\":\"";
@@ -87,7 +92,7 @@ error_exit:
       strcpy(operationId, tmpBuffer + index);
       // Serial.print("OperationId:");
       // Serial.println(operationId);
-      client.stop();
+      client->stop();
     }
   } else {
     Serial.println("ERROR: Couldn't connect AzureIOT DPS endpoint.");
@@ -98,8 +103,13 @@ error_exit:
 }
 
 int _getHostName(char *scopeId, char*deviceId, char *authHeader, char*operationId, char* hostName) {
-  WiFiSSLClient client;
-  if (!client.connect(AZURE_IOT_CENTRAL_DPS_ENDPOINT, 443)) {
+  Client *client;
+  #if defined ARDUINO_SAMD_MKR1000 || defined ARDUINO_SAMD_MKRWIFI1010
+  client = new WiFiSSLClient();
+  #else if defined ARDUINO_SAMD_MKRGSM1400
+  client = new GSMSSLClient();
+  #endif
+  if (!client->connect(AZURE_IOT_CENTRAL_DPS_ENDPOINT, 443)) {
     Serial.println("ERROR: DPS endpoint GET call has failed.");
     return 1;
   }
@@ -108,19 +118,19 @@ int _getHostName(char *scopeId, char*deviceId, char *authHeader, char*operationI
   size_t size = snprintf(tmpBuffer, TEMP_BUFFER_SIZE,
     "GET /%s/registrations/%s/operations/%s?api-version=2018-11-01 HTTP/1.1", scopeId, deviceIdEncoded.c_str(), operationId);
   assert(size != 0); tmpBuffer[size] = 0;
-  client.println(tmpBuffer);
-  client.println("Host: global.azure-devices-provisioning.net");
-  client.println("content-type: application/json; charset=utf-8");
-  client.println("user-agent: iot-central-client/1.0");
-  client.println("Accept: */*");
-  client.println(authHeader);
-  client.println("Connection: close");
-  client.println();
+  client->println(tmpBuffer);
+  client->println("Host: global.azure-devices-provisioning.net");
+  client->println("content-type: application/json; charset=utf-8");
+  client->println("user-agent: iot-central-client/1.0");
+  client->println("Accept: */*");
+  client->println(authHeader);
+  client->println("Connection: close");
+  client->println();
   delay(5000); // give 5 secs to server to process
   memset(tmpBuffer, 0, TEMP_BUFFER_SIZE);
   int index = 0;
-  while (client.available() && index < TEMP_BUFFER_SIZE - 1) {
-    tmpBuffer[index++] = client.read();
+  while (client->available() && index < TEMP_BUFFER_SIZE - 1) {
+    tmpBuffer[index++] = client->read();
   }
   tmpBuffer[index] = 0;
   const char* lookFor = "\"assignedHub\":\"";
@@ -134,7 +144,7 @@ int _getHostName(char *scopeId, char*deviceId, char *authHeader, char*operationI
   int index2 = indexOf(tmpBuffer, TEMP_BUFFER_SIZE, "\"", 1, index + 1);
   memcpy(hostName, tmpBuffer + index, index2 - index);
   hostName[index2-index] = 0;
-  client.stop();
+  client->stop();
   return 0;
 }
 

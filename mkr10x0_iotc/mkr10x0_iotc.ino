@@ -21,6 +21,12 @@
 #define DEVICE_NAME "Arduino MKR1010"
 #endif
 
+// are we compiling against the Arduino MKR1400 GSM
+#ifdef ARDUINO_SAMD_MKRGSM1400
+#include <MKRGSM.h>
+#define DEVICE_NAME "Arduino MKR1400 GSM"
+#endif
+
 #include <WiFiUdp.h>
 #include <RTCZero.h>
 #include <SimpleDHT.h>
@@ -61,7 +67,7 @@ String iothubHost;
 String deviceId;
 String sharedAccessKey;
 
-WiFiSSLClient wifiClient;
+Client *client = NULL;
 PubSubClient *mqtt_client = NULL;
 
 bool timeSet = false;
@@ -296,6 +302,9 @@ void setup() {
     // seed pseudo-random number generator for die roll and simulated sensor values
     randomSeed(millis());
 
+
+    #if defined ARDUINO_SAMD_MKR1000 || defined ARDUINO_SAMD_MKRWIFI1010
+
     // attempt to connect to Wifi network:
     Serial.print((char*)F("WiFi Firmware version is "));
     Serial.println(WiFi.firmwareVersion());
@@ -306,6 +315,24 @@ void setup() {
         status = WiFi.begin(wifi_ssid, wifi_password);
         delay(1000);
     }
+    
+    #endif
+
+    #if defined ARDUINO_SAMD_MKRGSM1400
+    bool connected = false;
+    GPRS gprs;
+    GSM gsmAccess;
+    while (!connected) {
+        Serial_printf((char*)F("Attempting to connect to APN: %s \n"), GPRS_APN);
+        if ((gsmAccess.begin(PINNUMBER) == GSM_READY) &&
+            (gprs.attachGPRS(GPRS_APN, GPRS_LOGIN, GPRS_PASSWORD) == GPRS_READY)) {
+            connected = true;
+        } else {
+            Serial.println("Not connected");
+            delay(1000);
+        }
+    }
+    #endif
 
     // get current UTC time
     getTime();
@@ -325,8 +352,13 @@ void setup() {
     String username = iothubHost + "/" + deviceId + (char*)F("/api-version=2016-11-14");
 
     // connect to the IoT Hub MQTT broker
-    wifiClient.connect(iothubHost.c_str(), 8883);
-    mqtt_client = new PubSubClient(iothubHost.c_str(), 8883, wifiClient);
+    #if defined ARDUINO_SAMD_MKR1000 || defined ARDUINO_SAMD_MKRWIFI1010
+    client = new WiFiSSLClient();
+    #else if defined ARDUINO_SAMD_MKRGSM1400
+    client = new GSMSSLClient();
+    #endif
+    client->connect(iothubHost.c_str(), 8883);
+    mqtt_client = new PubSubClient(iothubHost.c_str(), 8883, *client);
     connectMQTT(deviceId, username, sasToken);
     mqtt_client->setCallback(callback);
 

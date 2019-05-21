@@ -1,22 +1,22 @@
-# Arduino MKR1000/1010 with Azure IoT Central
+# Arduino MKR1000/MKR1010 (Wi-Fi) and MKRGSM1400 (GSM) with Azure IoT Central
 
 ## About
 
-Arduino MKR1000 or MKR1010 code sample to send temperature and humidity data to Azure IoT Central.
+Arduino MKR1000/MKR1010 (Wi-Fi) and MKRGSM1400 (GSM) code sample to send temperature and humidity data to Azure IoT Central.
 
-## Purchasing an Arduino MKR1000 or MKR1010
+## Purchasing an Arduino MKR1000/MKR1010 or MKRGSM1400
 
-If you dont have an Arduino MKR1000 or MKR1010 you can purchase one from Arrow 
+If you dont have an Arduino MKR1000/MKR1010 or a MKRGSM1400 you can purchase one from Arrow 
 
 ![Arrow logo](https://github.com/firedog1024/mkr1000-iotc/raw/master/assets/arrow-logo.png)
 
 * Arduino MKR1000 https://www.arrow.com/en/products/abx00011/arduino-corporation
 * Arduino MKR1010 https://www.arrow.com/en/products/abx00023/arduino-corporation
-
+* Arduino MKRGSM1400 https://www.arrow.com/en/products/abx00018/arduino-corporation
 
 ## Features
 
-* Works with both the Arduino MKR1000 or MKR1010 devices
+* Works with the Arduino MKR1000/MKR1010 (Wi-Fi) and MKRGSM1400 (GSM) devices
 * Uses a DHT11 or DHT22 sensor for temperature and humidity (no sensor no-problem, temperature and humidity data can be simulated)
 * Uses simple MQTT library to communicate to Azure IoT Central
 * Simple code base designed to illustrate how the code works and encourage hacking (~400 lines of core code w/ comments)
@@ -56,6 +56,13 @@ This code requires a couple of libraries to be installed for it to compile.  Dep
 * Install library "RTCZero"
 * Install library "PubSubClient"
 
+### MKRGSM1400
+
+* Install library "MKRGSM"
+* Install library "SimpleDHT"
+* Install library "RTCZero"
+* Install library "PubSubClient"
+
 **Note** - We need to increase the payload size limit in PubSubClient to allow for the larger size of MQTT messages from the Azure IoT Hub.  Open the file at %HomePath%\Documents\Arduino\libraries\PubSubClient\src\PubSubClient.h in your favorite code editor.  Change the line (line 26 in current version):
 
 ``` C
@@ -68,7 +75,7 @@ to:
 #define MQTT_MAX_PACKET_SIZE 2048
 ```
 
-Save the file and you have made the necessary fix.  The size probably does not need to be this large but I have not found the crossover point where the size causes a failure.  Fortunately the MKR1000/1010 has a pretty good amount of SRAM (32KB) so we should be ok.
+Save the file and you have made the necessary fix.  The size probably does not need to be this large but I have not found the crossover point where the size causes a failure.  Fortunately the MKR series have a pretty good amount of SRAM (32KB) so we should be ok.
 
 To connect the device to Azure IoT Central you will need to provision an IoT Central application.  This is free for **seven days** but if you already have signed up for an Azure subscription and want to use pay as you go IoT Central is free as long as you have no more than **five devices** and do not exceed **1MB per month** of data.  
 
