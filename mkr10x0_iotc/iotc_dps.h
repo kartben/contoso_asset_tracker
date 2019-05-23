@@ -10,7 +10,7 @@ int getDPSAuthString(char* scopeId, char* deviceId, char* key, char *buffer, int
 
   String deviceIdEncoded = urlEncode(deviceId);
   char dataBuffer[AUTH_BUFFER_SIZE] = {0};
-  size_t size = snprintf(dataBuffer, AUTH_BUFFER_SIZE, "%s%%2Fregistrations%%2F%s", scopeId, deviceIdEncoded.c_str());
+  size_t size = snprintf(dataBuffer, AUTH_BUFFER_SIZE, "%s/registrations/%s", scopeId, deviceIdEncoded.c_str());
   assert(size < AUTH_BUFFER_SIZE); dataBuffer[size] = 0;
   String sr = dataBuffer;
   size = snprintf(dataBuffer, AUTH_BUFFER_SIZE, "%s\n%lu000", sr.c_str(), expiresSecond);

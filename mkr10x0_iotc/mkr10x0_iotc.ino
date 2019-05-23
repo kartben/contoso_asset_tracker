@@ -27,7 +27,14 @@
 #define DEVICE_NAME "Arduino MKR1400 GSM"
 #endif
 
+#if defined ARDUINO_SAMD_MKR1000 || defined ARDUINO_SAMD_MKRWIFI1010
 #include <WiFiUdp.h>
+#endif
+
+#ifdef ARDUINO_SAMD_MKRGSM1400
+#include <GSMUdp.h>
+#endif
+
 #include <RTCZero.h>
 #include <SimpleDHT.h>
 
@@ -104,10 +111,14 @@ static const char PROGMEM IOT_DIRECT_MESSAGE_TOPIC[] = "$iothub/methods/POST/#";
 int requestId = 0;
 int twinRequestId = -1;
 
-// create a WiFi UDP object for NTP to use
-WiFiUDP wifiUdp;
+// create a UDP object for NTP to use
+#if defined ARDUINO_SAMD_MKR1000 || defined ARDUINO_SAMD_MKRWIFI1010
+UDP *udp = new WiFiUDP(); 
+#else if defined ARDUINO_SAMD_MKRGSM1400
+UDP *udp = new GSMUDP();
+#endif
 // create an NTP object
-NTP ntp(wifiUdp);
+NTP ntp(*udp);
 // Create an rtc object
 RTCZero rtc;
 
