@@ -1,67 +1,43 @@
-# Arduino MKR1000/MKR1010 (Wi-Fi) and MKRGSM1400 (GSM) with Azure IoT Central
+# Contoso Art Shipping Asset Tracker
 
 ## About
 
-Arduino MKR1000/MKR1010 (Wi-Fi) and MKRGSM1400 (GSM) code sample to send temperature and humidity data to Azure IoT Central.
+Arduino MKRGSM1400 + MKRENV shield application that implements an asset tracking solution for a fictional art shipping company, Contoso Art Shipping. This application sends telemetry information such as temperature, humidity, etc. to Azure IoT Central using MKR1400's cellular modem. 
 
-## Purchasing an Arduino MKR1000/MKR1010 or MKRGSM1400
+When combined with an LCD touchscreen (see e.g [Arduitouch enclosure](https://www.hwhardsoft.de/english/projects/arduitouch-mkr/)), the application provides a nice GUI for monitoring the status of the connection to Azure IoT Central, the GSM signal quality, as well as sensor information.
 
-If you dont have an Arduino MKR1000/MKR1010 or a MKRGSM1400 you can purchase one from Arrow 
+## Purchasing an Arduino MKRGSM1400
 
-![Arrow logo](https://github.com/firedog1024/mkr1000-iotc/raw/master/assets/arrow-logo.png)
+If you dont have an Arduino MKRGSM1400 you can purchase one from [Arduino Store](https://store.arduino.cc/usa/mkr-gsm-1400) or [Mouser](https://www2.mouser.com/ProductDetail/Arduino/ABX00018?qs=%2Fha2pyFaduhmYvnoJVWU32W04%2F60eHEJ%252B94cFnN%252BkXI=).
 
-* Arduino MKR1000 https://www.arrow.com/en/products/abx00011/arduino-corporation
-* Arduino MKR1010 https://www.arrow.com/en/products/abx00023/arduino-corporation
-* Arduino MKRGSM1400 https://www.arrow.com/en/products/abx00018/arduino-corporation
+MKR ENV shield can be purchased from [Arduino Store](https://store.arduino.cc/usa/mkr-env-shield) or [Mouser](https://www2.mouser.com/ProductDetail/Arduino/ASX00011?qs=%2Fha2pyFaduihW07lKAnjJGztgJ19Y1I%2Fl9R2%2FAgQnsRhOqKdbbnOcw%3D%3D).
 
-## Features
-
-* Works with the Arduino MKR1000/MKR1010 (Wi-Fi) and MKRGSM1400 (GSM) devices
-* Uses a DHT11 or DHT22 sensor for temperature and humidity (no sensor no-problem, temperature and humidity data can be simulated)
-* Uses simple MQTT library to communicate to Azure IoT Central
-* Simple code base designed to illustrate how the code works and encourage hacking (~400 lines of core code w/ comments)
-* Supports the use of Azure IoT Device Provisioning Service (DPS) for registering the device in IoT Central
-* IoT Central features supported
-  * Telemetry data - Temperature and Humidity
-  * Properties - Device sends a die roll number every 15 seconds
-  * Settings - Change the fan speed value and see it displayed in the serial moitor and acknowledged back to IoT Central
-  * Commands - Send a message to the device and see it displayed as morse code on the device LED
+Arduitouch Touchscreen enclosure can be purchased from [Zihatec](https://www.hwhardsoft.de/english/webshop/arduitouch/#cc-m-product-11543776297).
 
 ## Installation
 
-Run:
-
-```
-git clone https://github.com/firedog1024/mkr1000-iotc.git
-```
+TBD
 
 ## Prerequisite
 
+Install the Arduino IDE and the necessary drivers for the Arduino MKR1000 series of boards and ensure that a simple LED blink sketch compiles and runs on the board.  Follow the guide here https://www.arduino.cc/en/Guide/MKR1000
 
-Install the Arduino IDE (I tested with the current latest version 1.8.8) and the necessary drivers for the Arduino MKR1000 series of boards and ensure that a simple LED blink sketch compiles and runs on the board.  Follow the guide here https://www.arduino.cc/en/Guide/MKR1000
+This code requires a couple of libraries to be installed for it to compile. To install an Arduino library open the Arduino IDE and click the "Sketch" menu and then "Include Library" -> "Manage Libraries".  In the dialog filter by the library name below and install the latest version.  For more information on installing libraries with Arduino see https://www.arduino.cc/en/guide/libraries. 
 
-This code requires a couple of libraries to be installed for it to compile.  Depending on if you are using a MKR1000 or MKR1010 board the Wi-Fi libraries are different.  To install an Arduino library open the Arduino IDE and click the "Sketch" menu and then "Include Library" -> "Manage Libraries".  In the dialog filter by the library name below and install the latest version.  For more information on installing libraries with Arduino see https://www.arduino.cc/en/guide/libraries. 
+Libraries you need to install:
 
-### MKR1000:
+* MKRGSM
+* Arduino_MKRENV
+* RTCZero
+* PubSubClient
+* ArduinoHttpClient
 
-* Install library "Wifi101"
-* Install library "SimpleDHT"
-* Install library "RTCZero"
-* Install library "PubSubClient"
+If you are planning to use an LCD touchscreen display, you also need:
 
-### MKR1010:
-
-* Install library "WiFiNINA"
-* Install library "SimpleDHT"
-* Install library "RTCZero"
-* Install library "PubSubClient"
-
-### MKRGSM1400
-
-* Install library "MKRGSM"
-* Install library "SimpleDHT"
-* Install library "RTCZero"
-* Install library "PubSubClient"
+* Adafruit GFX Library
+* Adafruit ILI9341
+* XPT2046_Touchscreen
+* QRCode
 
 **Note** - We need to increase the payload size limit in PubSubClient to allow for the larger size of MQTT messages from the Azure IoT Hub.  Open the file at %HomePath%\Documents\Arduino\libraries\PubSubClient\src\PubSubClient.h in your favorite code editor.  Change the line (line 26 in current version):
 
@@ -75,7 +51,7 @@ to:
 #define MQTT_MAX_PACKET_SIZE 2048
 ```
 
-Save the file and you have made the necessary fix.  The size probably does not need to be this large but I have not found the crossover point where the size causes a failure.  Fortunately the MKR series have a pretty good amount of SRAM (32KB) so we should be ok.
+Save the file and you have made the necessary fix.
 
 To connect the device to Azure IoT Central you will need to provision an IoT Central application.  This is free for **seven days** but if you already have signed up for an Azure subscription and want to use pay as you go IoT Central is free as long as you have no more than **five devices** and do not exceed **1MB per month** of data.  
 
@@ -91,62 +67,33 @@ You should now have an IoT Central application provisioned so lets add a real de
 
 You now have a device in IoT Central that can be connected to from the Arduino MKR1000/1010 device.  Proceed to wiring and configuration.
 
-## Wiring
-
-![wiring diagram for mkr1000/1010 and DHT11/22](https://github.com/firedog1024/mkr1000-iotc/raw/master/assets/mkr1000_dht.png)
-
-From left to right pins on the DHT11/22 sensor:
-
-1. VCC (voltage 3.3v or 5v, MKR uses 3.3V natively)
-2. ~2 (data)
-3. Not connected
-4. GND (ground)
-
 ## Configuration
 
-We need to copy some values from our new IoT Central device into the configure.h file so it can connect to IoT Central.
+The `configure.h` file allows you to configure various settings. At a minimum, you will need to set the following constants:
 
-Click the device you created at the end of the Prerequisite step and click the "Connect" link to get the connection information for the device.  We are going to copy "Scope ID', Device ID", and "Primary Key" values into the respective positions in the configure.h file.
+### Cellular connection
 
-``` C
+``` CPP
+// GSM information
+static char PROGMEM PINNUMBER[]     = "<replace with SIM card's PIN number, or empty string if no PIN is needed>";
+// APN data
+static char PROGMEM GPRS_APN[]      = "<replace with your APN>";
+static char PROGMEM GPRS_LOGIN[]    = "<replace with your APN login or empty string if no login is needed";
+static char PROGMEM GPRS_PASSWORD[] = "<replace with your APN password or empty string if no password is needed";
+```
+
+### IoT Central
+
+``` CPP
 // Azure IoT Central device information
-static char PROGMEM iotc_scopeId[] = "<replace with IoT Central scope-id>";
-static char PROGMEM iotc_deviceId[] = "<replace with IoT Central device id>";
-static char PROGMEM iotc_deviceKey[] = "<replace with IoT Central device key>";
-```
-
-You will also need to provide the Wi-Fi SSID (Wi-Fi name) and password in the configure.h
-
-``` C
-// Wi-Fi information
-static char PROGMEM wifi_ssid[] = "<replace with Wi-Fi SSID>";
-static char PROGMEM wifi_password[] = "<replace with Wi-Fi password>";
-```
-
-Finally we need to tell the code what DHT sensor we are using.  This can be the DHT22 (white), DHT11 (blue), or none and have the code simulate the values.  Comment and uncomment the appropriate lines in configure.h
-
-``` C
-// comment / un-comment the correct sensor type being used
-//#define SIMULATE_DHT_TYPE
-//#define DHT11_TYPE
-#define DHT22_TYPE
-```
-
-If for any reason you use a different GPIO pin for the data you can also change the pin number in the configure.h file
-
-``` C
-// for DHT11/22, 
-//   VCC: 5V or 3V
-//   GND: GND
-//   DATA: 2
-int pinDHT = 2;
+static char PROGMEM iotc_enrollmentKey[] = "<replace with your IoT Central group key>";
+static char PROGMEM iotc_scopeId[] = "<replace with your IoT Central Scope ID>";
+static char PROGMEM iotc_modelId[] = "<replace with the model ID of your asset tracker>";
 ```
 
 ## Compiling and running
 
-Now that you have configured the code with IoT Central, Wi-Fi, and DHT sensor information we are ready to compile and run the code on the device.
-
-Load the mkr10x0_iotc\mkr10x0_iotc.ino file into the Arduino IDE and click the Upload button on the toolbar.  The code should compile and be uploaded to the device.  In the output window you should see:
+Load the contoso_asset_tracker\contoso_asset_tracker.ino file into the Arduino IDE and click the Upload button on the toolbar.  The code should compile and be uploaded to the device.  In the output window you should see:
 
 
 ```
@@ -284,14 +231,3 @@ We can send a message to the device from IoT Central.  Go to the "Commands" link
 The morse code blinking LED is here on the MKR1000
 
 ![morse code blinking LED location](https://github.com/firedog1024/mkr1000-iotc/raw/master/assets/blink_led.png)
-
-## What Now?
-
-You have the basics now go play and hack this code to send other sensor data to Azure IoT Central.  If you want to create a new device template for this you can learn how to do that with this documentation https://docs.microsoft.com/en-us/azure/iot-central/howto-set-up-template.
-
-How about creating a rule to alert when the temperature or humidity exceed a certain value.  Learn about creating rules here https://docs.microsoft.com/en-us/azure/iot-central/tutorial-configure-rules.
-
-For general documentation about Azure IoT Central you can go here https://docs.microsoft.com/en-us/azure/iot-central/.
-
-Have fun!
-

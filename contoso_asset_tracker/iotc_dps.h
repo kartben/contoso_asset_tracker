@@ -1,4 +1,5 @@
 #include <assert.h>
+#include "trace.h"
 
 #define AZURE_IOT_CENTRAL_DPS_ENDPOINT "global.azure-devices-provisioning.net"
 #define TEMP_BUFFER_SIZE 1024
@@ -39,33 +40,48 @@ int getDPSAuthString(char* scopeId, char* deviceId, char* key, char *buffer, int
 }
 
 int _getOperationId(char* scopeId, char* deviceId, char* authHeader, char *operationId) {
-  Client *client;
-  #if defined ARDUINO_SAMD_MKR1000 || defined ARDUINO_SAMD_MKRWIFI1010
-  client = new WiFiSSLClient();
-  #else if defined ARDUINO_SAMD_MKRGSM1400
-  client = new GSMSSLClient();
-  #endif
+  Client *client = new GSMSSLClient();
+
   if (client->connect(AZURE_IOT_CENTRAL_DPS_ENDPOINT, 443)) {
     char tmpBuffer[TEMP_BUFFER_SIZE] = {0};
     String deviceIdEncoded = urlEncode(deviceId);
+
     size_t size = snprintf(tmpBuffer, TEMP_BUFFER_SIZE,
-      "PUT /%s/registrations/%s/register?api-version=2018-11-01 HTTP/1.0", scopeId, deviceIdEncoded.c_str());
+      "PUT /%s/registrations/%s/register?api-version=2019-01-15 HTTP/1.0", scopeId, deviceIdEncoded.c_str());
     assert(size != 0); tmpBuffer[size] = 0;
+
     client->println(tmpBuffer);
     client->println("Host: global.azure-devices-provisioning.net");
     client->println("content-type: application/json; charset=utf-8");
     client->println("user-agent: iot-central-client/1.0");
     client->println("Accept: */*");
+
+    #if PNP
+    // size = snprintf(tmpBuffer, TEMP_BUFFER_SIZE,
+    //   "{\"registrationId\":\"%s\",\"data\":{\"__iot:interfaces\":"
+    //                                                       "{"
+    //                                                           "\"CapabilityModelUri\": \"" DCM_URI "\" ,"
+    //                                                           "\"ModelRepositoryUri\": \"" DCM_URI "\""
+    //                                                       "}}}", deviceId);
+
     size = snprintf(tmpBuffer, TEMP_BUFFER_SIZE,
-      "{\"registrationId\":\"%s\"}", deviceId);
+      "{\"registrationId\":\"%s\",\"data\":{\"iotcModelId\": \"%s\" }"
+      "}", deviceId, iotc_modelId);
+
+    #else
+    size = snprintf(tmpBuffer, TEMP_BUFFER_SIZE, "{\"registrationId\":\"%s\"}", deviceId);
+    #endif
+
     assert(size != 0); tmpBuffer[size] = 0;
     String regMessage = tmpBuffer;
+    Serial.println(regMessage);
     size = snprintf(tmpBuffer, TEMP_BUFFER_SIZE,
       "Content-Length: %d", regMessage.length());
     assert(size != 0); tmpBuffer[size] = 0;
     client->println(tmpBuffer);
-
+    #if !X509
     client->println(authHeader);
+    #endif
     client->println("Connection: close");
     client->println();
     client->println(regMessage.c_str());
@@ -103,14 +119,11 @@ error_exit:
 }
 
 int _getHostName(char *scopeId, char*deviceId, char *authHeader, char*operationId, char* hostName) {
-  Client *client;
-  #if defined ARDUINO_SAMD_MKR1000 || defined ARDUINO_SAMD_MKRWIFI1010
-  client = new WiFiSSLClient();
-  #else if defined ARDUINO_SAMD_MKRGSM1400
-  client = new GSMSSLClient();
-  #endif
+  Client *client = new GSMSSLClient();
+
   if (!client->connect(AZURE_IOT_CENTRAL_DPS_ENDPOINT, 443)) {
     Serial.println("ERROR: DPS endpoint GET call has failed.");
+    client->stop();
     return 1;
   }
   char tmpBuffer[TEMP_BUFFER_SIZE] = {0};
@@ -123,7 +136,9 @@ int _getHostName(char *scopeId, char*deviceId, char *authHeader, char*operationI
   client->println("content-type: application/json; charset=utf-8");
   client->println("user-agent: iot-central-client/1.0");
   client->println("Accept: */*");
+  #if !X509
   client->println(authHeader);
+  #endif
   client->println("Connection: close");
   client->println();
   delay(5000); // give 5 secs to server to process
@@ -138,6 +153,7 @@ int _getHostName(char *scopeId, char*deviceId, char *authHeader, char*operationI
   if (index == -1) {
     Serial.println("ERROR: couldn't get assignedHub. Trying again..");
     Serial.println(tmpBuffer);
+    client->stop();
     return 2;
   }
   index += strlen(lookFor);
@@ -150,18 +166,22 @@ int _getHostName(char *scopeId, char*deviceId, char *authHeader, char*operationI
 
 int getHubHostName(char *scopeId, char* deviceId, char* key, char *hostName) {
   char authHeader[AUTH_BUFFER_SIZE] = {0};
+  #if !X509
   size_t size = 0;
-  //Serial.println("- iotc.dps : getting auth...");
+  __TRACE__("- iotc.dps: getting auth...");
   if (getDPSAuthString(scopeId, deviceId, key, (char*)authHeader, AUTH_BUFFER_SIZE, size)) {
-    Serial.println("ERROR: getDPSAuthString has failed");
+    __TRACE__("ERROR: getDPSAuthString has failed");
     return 1;
   }
-  //Serial.println("- iotc.dps : getting operation id...");
+  #endif
+
+  __TRACE__("- iotc.dps: getting operation id...");
   char operationId[AUTH_BUFFER_SIZE] = {0};
   if (_getOperationId(scopeId, deviceId, authHeader, operationId) == 0) {
-    delay(4000);
-    //Serial.println("- iotc.dps : getting host name...");
-    while( _getHostName(scopeId, deviceId, authHeader, operationId, hostName) == 2) delay(5000);
+    delay(2000);
+    __TRACE__("- iotc.dps: getting host name...");
+    // TODO fix potential infinite loop
+    while( _getHostName(scopeId, deviceId, authHeader, operationId, hostName) != 0) delay(2000);
     return 0;
   }
 }

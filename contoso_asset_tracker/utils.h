@@ -1,55 +1,9 @@
-// convert a float to a string as Arduino lacks an ftoa function
-char *dtostrf(double value, int width, unsigned int precision, char *result)
-{
-    int decpt, sign, reqd, pad;
-    const char *s, *e;
-    char *p;
-    s = fcvt(value, precision, &decpt, &sign);
-    if (precision == 0 && decpt == 0) {
-        s = (*s < '5') ? "0" : "1";
-        reqd = 1;
-    } else {
-        reqd = strlen(s);
-        if (reqd > decpt) reqd++;
-        if (decpt == 0) reqd++;
-    }
-    if (sign) reqd++;
-    p = result;
-    e = p + reqd;
-    pad = width - reqd;
-    if (pad > 0) {
-        e += pad;
-        while (pad-- > 0) *p++ = ' ';
-    }
-    if (sign) *p++ = '-';
-    if (decpt <= 0 && precision > 0) {
-        *p++ = '0';
-        *p++ = '.';
-        e++;
-        while ( decpt < 0 ) {
-            decpt++;
-            *p++ = '0';
-        }
-    }    
-    while (p < e) {
-        *p++ = *s++;
-        if (p == e) break;
-        if (--decpt == 0) *p++ = '.';
-    }
-    if (width < 0) {
-        pad = (reqd + width) * -1;
-        while (pad-- > 0) *p++ = ' ';
-    }
-    *p = 0;
-    return result;
-}
-
 // implementation of printf for use in Arduino sketch
 void Serial_printf(char* fmt, ...) {
-    char buf[256]; // resulting string limited to 128 chars
+    char buf[512]; // resulting string limited to 512 chars
     va_list args;
     va_start (args, fmt );
-    vsnprintf(buf, 256, fmt, args);
+    vsnprintf(buf, 512, fmt, args);
     va_end (args);
     Serial.print(buf);
 }
