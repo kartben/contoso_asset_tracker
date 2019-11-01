@@ -821,9 +821,7 @@ void loop() {
         else {
             payload = F("{ \"batteryRemaining\": {bat}}");
         }
-        #if PNP
-        //payload.replace(F("{interfaceId}"), String("$iotiuri:https://azureiot.com/interfaces/deviceInformation/1.0.0"));
-        #endif
+
         payload.replace(F("{bat}"), String(batteryValue, 3));
         
         servicesStatus[MQTT_STATUS] = TRANSMITTING; __REFRESH_DISPLAY__;

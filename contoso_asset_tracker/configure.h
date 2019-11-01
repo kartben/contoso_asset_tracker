@@ -6,7 +6,6 @@
 #define USE_NTP     1   // set to 1 to use NTP for setting local time, 
                         // if USE_NTP=0, the device will get time info from cellular network
 
-#define PNP         1
 #define X509        0   // else auth will be using SYMKEY
 #define ARM_PELION  0  
 //#define IOTC_SINGLE_ENROLLMENT

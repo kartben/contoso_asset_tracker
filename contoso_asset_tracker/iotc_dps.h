@@ -56,21 +56,7 @@ int _getOperationId(char* scopeId, char* deviceId, char* authHeader, char *opera
     client->println("user-agent: iot-central-client/1.0");
     client->println("Accept: */*");
 
-    #if PNP
-    // size = snprintf(tmpBuffer, TEMP_BUFFER_SIZE,
-    //   "{\"registrationId\":\"%s\",\"data\":{\"__iot:interfaces\":"
-    //                                                       "{"
-    //                                                           "\"CapabilityModelUri\": \"" DCM_URI "\" ,"
-    //                                                           "\"ModelRepositoryUri\": \"" DCM_URI "\""
-    //                                                       "}}}", deviceId);
-
-    size = snprintf(tmpBuffer, TEMP_BUFFER_SIZE,
-      "{\"registrationId\":\"%s\",\"data\":{\"iotcModelId\": \"%s\" }"
-      "}", deviceId, iotc_modelId);
-
-    #else
     size = snprintf(tmpBuffer, TEMP_BUFFER_SIZE, "{\"registrationId\":\"%s\"}", deviceId);
-    #endif
 
     assert(size != 0); tmpBuffer[size] = 0;
     String regMessage = tmpBuffer;
